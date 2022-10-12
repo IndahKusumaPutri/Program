@@ -1,0 +1,176 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\program;
+use App\pasien;
+use App\lakes;
+use Carbon\Carbon as CarbonCarbon;
+use Carbon\Carbon;
+
+class ProgramController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+        $pasien      = \App\Pasien::all();
+
+        $lakes       = \App\Lakes::all();
+
+        $program     = Program::all();
+        
+        return view('program.index',compact('program','pasien','lakes'));
+    }
+
+    public function fetchName(Request $request)
+    {
+        $pasien = Pasien::where('id_pasien', $request->id)
+                    ->get(["nama_pasien", "NIB ", "id_pasien"]);
+        
+        return response()->json($pasien);
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function create()
+    {
+        $date = Carbon::now();
+        $datenow = $date->format('d-m-Y');
+
+        $tujuh_hari = mktime(0,0,0, date("n"), date("j")+30, date("Y"));
+        $datang_kembali = date("d-m-Y", $tujuh_hari);
+
+        $program     = \App\Program::all();
+
+        $pasien      = \App\Pasien::all();
+
+        $lakes       = \App\Lakes::all();
+        
+        return view('program.create',compact('program','pasien','lakes', 'datenow', 'datang_kembali'));
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        // dd($request);
+        $this->validate($request,[
+            'id_pasien' => 'required',
+            'id_layanankesehatan' => 'required',
+            'terakhir_datang' => 'required',
+            'datang_kembali' => 'required',
+            'hasil_periksa' => 'required'
+        ]);
+
+        $program = Program::where([
+            'id_pasien' =>$request->id_pasien,
+            'id_layanankesehatan' =>$request->id_layanankesehatan,
+            'terakhir_datang' => $request->terakhir_datang,
+            'hasil_periksa' => $request->hasil_periksa
+        ])->first();
+
+            if ($program) {
+
+            return redirect()->back()->withErrors(['id_pasien' => 'sudah terdaftar']);
+
+        }   else {
+
+            Program::create($request->all()); 
+
+            return redirect()->route('program.index')->with('Data ditambah','Data berhasil ditambah');
+        }
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function show($id)
+    {
+        $program = Program::where('id_program',$id)->first();
+        
+        return view('program.show',compact('program'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function edit($id)
+    {
+        $date = Carbon::now();
+        $datenow = $date->format('d-m-Y');
+
+        $tujuh_hari = mktime(0,0,0, date("n"), date("j")+30, date("Y"));
+        $datang_kembali = date("d-m-Y", $tujuh_hari);
+
+        $program = Program::where('id_program',$id)->first();
+
+        $pasien  = \App\Pasien::all();
+
+        $lakes   = \App\Lakes::all();
+
+        return view('program.edit',compact('program','pasien','lakes', 'datenow', 'datang_kembali'));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, $id)
+    {
+        $this->validate($request,[
+            'id_pasien' => 'required',
+            'id_layanankesehatan' => 'required',
+            'terakhir_datang' => 'required',
+            'datang_kembali' => 'required',
+            'hasil_periksa' => 'required'
+        ]);
+
+        Program::where('id_program',$id)->update([
+            'id_pasien' => $request->id_pasien,
+            'id_layanankesehatan' => $request->id_layanankesehatan,
+            'datang_kembali' => $request->terakhir_datang,
+            'hasil_periksa' => $request->hasil_periksa
+        ]);
+        
+        return redirect()->route('program.index')->with('Data diedit','Data berhasil diedit');
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy($id)
+    {
+        Program::where('id_program',$id)->delete(); 
+        return redirect()->route('program.index')->with('Data dihapus','Data berhasil dihapus');
+    }
+
+    public function cetakProgram()
+    {
+        $cetakprogram = Program::all();
+        return view('program.cetakprogram',compact('cetakprogram'));
+    }
+}
